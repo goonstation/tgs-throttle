@@ -40,6 +40,14 @@ class TGSHandler
 		]);
 	}
 
+	// Get the ID of the current user
+	public function getUserId()
+	{
+		$response = $this->client->get('/User');
+		$body = json_decode($response->getBody());
+		return $body->id;
+	}
+
 	// Update the repository
 	public function updateRepo(int $instance)
 	{

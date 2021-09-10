@@ -75,8 +75,10 @@ class Throttler
 			FROM Jobs
 			WHERE Description = 'Compile active repository code'
 			AND StoppedAt IS NULL
+			AND StartedById = :currentUserId
 		";
-		$stmt = $this->pdo->query($query);
+		$stmt = $this->pdo->prepare($query);
+		$stmt->execute(['currentUserId' => $this->tgs->getUserId()]);
 		return $stmt->fetchAll();
 	}
 
