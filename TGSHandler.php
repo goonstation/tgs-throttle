@@ -45,7 +45,7 @@ class TGSHandler
     {
         $this->client->post('/Repository', [
             'headers' => ['Instance' => $instance],
-            'json' => ["updateSubmodules" => true]
+            'json' => ["updateFromOrigin" => true]
         ]);
     }
 

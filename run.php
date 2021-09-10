@@ -15,6 +15,7 @@ class Throttler
 	public function __construct()
 	{
 		$this->config = parse_ini_file('./config.ini', true);
+        $this->maxCompileJobs = (int) $this->config['throttle']['max'];
 		$this->dbConnect();
 		$this->tgs = new TGSHandler($this->config['tgs']['host'], $this->config['tgs']['port']);
 		$this->tgs->login($this->config['tgs']['user'], $this->config['tgs']['pass']);
@@ -82,7 +83,6 @@ class Throttler
 	// Get the commit hash of the last successful deployment
 	private function getLastSuccessfulHash(int $instanceId) : string
 	{
-		// Get the SHA of the last successful deployment
 		$query = "
 			SELECT ri.CommitSha AS last_success_sha
 			FROM Jobs j 
