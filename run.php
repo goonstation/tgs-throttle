@@ -62,7 +62,7 @@ class Throttler
 	}
 
 	// Get all active compilation jobs
-	private function getActiveCompilations() : int
+	private function getActiveCompilations() : array
 	{
 		/*
 		TGS currently has no sane way of looking for "only compile-type jobs"
@@ -71,13 +71,13 @@ class Throttler
 		https://github.com/tgstation/tgstation-server/issues/1318
 		*/
 		$query = "
-			SELECT COUNT(*)
+			SELECT InstanceId
 			FROM Jobs
 			WHERE Description = 'Compile active repository code'
 			AND StoppedAt IS NULL
 		";
 		$stmt = $this->pdo->query($query);
-		return $stmt->fetchColumn();
+		return $stmt->fetchAll();
 	}
 
 	// Get the commit hash of the last successful deployment
@@ -130,7 +130,9 @@ class Throttler
 	public function run()
 	{
 		$instances = $this->getInstances();
-		$this->activeCompileJobs = $this->getActiveCompilations();
+		$compileJobs = $this->getActiveCompilations();
+		$this->activeCompileJobs = count($compileJobs);
+		$this->log(json_encode($compileJobs));
 		$this->log("Active compile jobs: {$this->activeCompileJobs}");
 
 		// Randomise order of instances to give the impression of fairness when capacity blocking
@@ -144,6 +146,12 @@ class Throttler
 				// Max compilation jobs reached, abort out
 				$this->log('Aborting run loop: max compilation jobs reached');
 				break;
+			}
+
+			if (array_search($instance['Id'], array_column($compileJobs, 'InstanceId')) !== false) {
+				// Instance is already being compiled, skip it
+				$this->log('Skipping update: instance is already being compiled');   
+				continue;
 			}
 
 			$lastSuccessHash = $this->getLastSuccessfulHash($instance['Id']);
