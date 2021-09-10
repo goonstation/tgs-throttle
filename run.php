@@ -15,7 +15,7 @@ class Throttler
 	public function __construct()
 	{
 		$this->config = parse_ini_file('./config.ini', true);
-        $this->maxCompileJobs = (int) $this->config['throttle']['max'];
+		$this->maxCompileJobs = (int) $this->config['throttle']['max'];
 		$this->dbConnect();
 		$this->tgs = new TGSHandler($this->config['tgs']['host'], $this->config['tgs']['port']);
 		$this->tgs->login($this->config['tgs']['user'], $this->config['tgs']['pass']);
