@@ -144,7 +144,7 @@ class Throttler
 			return;
 		}
 
-		$this->log('Triggering update!');
+		$this->debugLog('Triggering update!');
 		$this->tgs->updateRepo($instanceId);
 		$this->tgs->deploy($instanceId);
 
