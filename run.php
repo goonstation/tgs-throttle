@@ -107,7 +107,7 @@ class Throttler
 	{
 		$cmd = [
 			"cd \"$instancePath/Repository\"",
-			'git fetch -q --recurse-submodules=no',
+			'git fetch -q --recurse-submodules=no --depth=1 $(git rev-parse --abbrev-ref --symbolic-full-name @{u} | sed \'s!/! !\')',
 			'git rev-parse $(git rev-parse --abbrev-ref --symbolic-full-name @{u})'
 		];
 		return trim(shell_exec(implode(';', $cmd)));
