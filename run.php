@@ -162,6 +162,7 @@ class Throttler
 		// Randomise order of instances to give the impression of fairness when capacity blocking
 		shuffle($instances);
 
+		$instancesTotal       = count($instances);
 		$instancesProcessed   = 0;
 		$instancesCompiling   = 0;
 		$instancesLatest      = 0;
@@ -203,7 +204,7 @@ class Throttler
 
 		$this->log(
 			"Triggered $deploymentsTriggered deployments. ".
-			"Instances: $instancesProcessed processed, ".
+			"Instances: $instancesProcessed/$instancesTotal processed, ".
 			"$instancesCompiling already compiling, ".
 			"$instancesLatest up to date."
 		);
