@@ -6,6 +6,7 @@ require 'TGSHandler.php';
 class Throttler
 {
 	private $maxCompileJobs = 2; // How many compilation jobs we want to allow at one time
+	private $debug = false; // Output verbose debug information if true
 	
 	private $activeCompileJobs = 0; // How many active compilation jobs exist
 	private array $config;
@@ -14,17 +15,38 @@ class Throttler
 
 	public function __construct()
 	{
-		$this->config = parse_ini_file('./config.ini', true);
-		$this->maxCompileJobs = (int) $this->config['throttle']['max'];
-		$this->dbConnect();
-		$this->tgs = new TGSHandler($this->config['tgs']['host'], $this->config['tgs']['port']);
-		$this->tgs->login($this->config['tgs']['user'], $this->config['tgs']['pass']);
+		$this->debugLog('Starting throttle');
+		try {
+			$this->config = parse_ini_file('./config.ini', true);
+			$this->maxCompileJobs = (int) $this->config['throttle']['max'];
+		} catch (\Exception $e) {
+			$this->log('Unable to get config: ' . $e->getMessage());
+		}
+
+		try {
+			$this->dbConnect();
+		} catch (\Exception $e) {
+			$this->log('Unable to connect to database: ' . $e->getMessage());
+		}
+
+		try {
+			$this->tgs = new TGSHandler($this->config['tgs']['host'], $this->config['tgs']['port']);
+			$this->tgs->login($this->config['tgs']['user'], $this->config['tgs']['pass']);
+		} catch (\Exception $e) {
+			$this->log('Unable to connect to TGS: ' . $e->getMessage());
+		}
 	}
 
-	// Debug logger
+	// Logging!
 	private function log($e)
 	{
-		echo $e . PHP_EOL;
+		echo '[' . date('Y-m-d H:i:s', time()) . '] ' . $e . PHP_EOL;
+	}
+
+	// Debug logging
+	private function debugLog($e)
+	{
+		if ($this->debug) $this->log($e);
 	}
 
 	// Connect to the database
@@ -118,7 +140,7 @@ class Throttler
 	{
 		if ($this->activeCompileJobs >= $this->maxCompileJobs) {
 			// Additional capacity safety check
-			$this->log('Unable to update: max compilation jobs reached');
+			$this->debugLog('Unable to update: max compilation jobs reached');
 			return;
 		}
 
@@ -131,45 +153,60 @@ class Throttler
 
 	public function run()
 	{
+		if (empty($this->config) || !$this->pdo || !$this->tgs) return;
 		$instances = $this->getInstances();
 		$compileJobs = $this->getActiveCompilations();
 		$this->activeCompileJobs = count($compileJobs);
-		$this->log(json_encode($compileJobs));
-		$this->log("Active compile jobs: {$this->activeCompileJobs}");
+		$this->debugLog("Active compile jobs: {$this->activeCompileJobs}");
 
 		// Randomise order of instances to give the impression of fairness when capacity blocking
 		shuffle($instances);
-		$this->log(json_encode($instances));
+
+		$instancesProcessed   = 0;
+		$instancesCompiling   = 0;
+		$instancesLatest      = 0;
+		$deploymentsTriggered = 0;
 
 		foreach ($instances as $instance) {
-			$this->log("Processing instance: {$instance['Name']}");
+			$instancesProcessed++;
+			$this->debugLog("Processing instance: {$instance['Name']}");
 
 			if ($this->activeCompileJobs >= $this->maxCompileJobs) {
 				// Max compilation jobs reached, abort out
-				$this->log('Aborting run loop: max compilation jobs reached');
+				$this->debugLog('Aborting run loop: max compilation jobs reached');
 				break;
 			}
 
 			if (array_search($instance['Id'], array_column($compileJobs, 'InstanceId')) !== false) {
 				// Instance is already being compiled, skip it
-				$this->log('Skipping update: instance is already being compiled');   
+				$this->debugLog('Skipping update: instance is already being compiled');
+				$instancesCompiling++;
 				continue;
 			}
 
 			$lastSuccessHash = $this->getLastSuccessfulHash($instance['Id']);
-			$this->log("Last successful deployment SHA: $lastSuccessHash");
+			$this->debugLog("Last successful deployment SHA: $lastSuccessHash");
 
 			$latestOriginHash = $this->getLatestOriginHash($instance['Path']);
-			$this->log("Latest origin SHA: $latestOriginHash");
+			$this->debugLog("Latest origin SHA: $latestOriginHash");
 
 			if ($lastSuccessHash === $latestOriginHash) {
 				// Last deployment matches latest origin, which means we don't need to compile
-				$this->log('Skipping update: deployment is already latest');
+				$this->debugLog('Skipping update: deployment is already latest');
+				$instancesLatest++;
 				continue;
 			}
 
 			$this->triggerUpdate($instance['Id']);
+			$deploymentsTriggered++;
 		}
+
+		$this->log(
+			"Triggered $deploymentsTriggered deployments. ".
+			"Instances: $instancesProcessed processed, ".
+			"$instancesCompiling already compiling, ".
+			"$instancesLatest up to date."
+		);
 	}
 }
 
