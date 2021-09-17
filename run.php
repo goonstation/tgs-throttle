@@ -17,7 +17,7 @@ class Throttler
 	{
 		$this->debugLog('Starting throttle');
 		try {
-			$this->config = parse_ini_file('./config.ini', true);
+			$this->config = parse_ini_file(dirname(__FILE__) . '/config.ini', true);
 			$this->maxCompileJobs = (int) $this->config['throttle']['max'];
 		} catch (\Exception $e) {
 			$this->log('Unable to get config: ' . $e->getMessage());
