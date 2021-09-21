@@ -179,14 +179,14 @@ class Throttler
 		$deploymentsTriggered = 0;
 
 		foreach ($instances as $instance) {
-			$instancesProcessed++;
-			$this->debugLog("Processing instance: {$instance['Name']}");
-
 			if ($this->activeCompileJobs >= $this->maxCompileJobs) {
 				// Max compilation jobs reached, abort out
 				$this->debugLog('Aborting run loop: max compilation jobs reached');
 				break;
 			}
+			
+			$instancesProcessed++;
+			$this->debugLog("Processing instance: {$instance['Name']}");
 
 			if (array_search($instance['Id'], array_column($compileJobs, 'InstanceId')) !== false) {
 				// Instance is already being compiled, skip it
@@ -212,12 +212,14 @@ class Throttler
 			$deploymentsTriggered++;
 		}
 
-		$this->log(
-			"Triggered $deploymentsTriggered deployments. ".
-			"Instances: $instancesProcessed/$instancesTotal processed, ".
-			"$instancesCompiling already compiling, ".
-			"$instancesLatest up to date."
-		);
+		if ($deploymentsTriggered > 0) {
+			$this->log(
+				"Triggered $deploymentsTriggered deployments. ".
+				"Instances: $instancesProcessed/$instancesTotal processed, ".
+				"$instancesCompiling already compiling, ".
+				"$instancesLatest up to date."
+			);
+		}
 	}
 }
 
