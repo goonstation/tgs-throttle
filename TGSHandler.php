@@ -49,11 +49,14 @@ class TGSHandler
 	}
 
 	// Update the repository
-	public function updateRepo(int $instance)
+	public function updateRepo(int $instance, string $branch)
 	{
 		$this->client->post('/Repository', [
 			'headers' => ['Instance' => $instance],
-			'json' => ["updateFromOrigin" => true]
+			'json' => [
+				"updateFromOrigin" => true,
+				"reference"		   => $branch
+			]
 		]);
 	}
 

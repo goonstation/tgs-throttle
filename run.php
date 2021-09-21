@@ -124,6 +124,16 @@ class Throttler
 		return $stmt->fetchColumn();
 	}
 
+	// Get the name of the current tracked branch
+	private function getCurrentBranch(string $instancePath) : string
+	{
+		$cmd = [
+			"cd \"$instancePath/Repository\"",
+			'git rev-parse --abbrev-ref HEAD'
+		];
+		return trim(shell_exec(implode(';', $cmd)));
+	}
+
 	// Get the commit hash for the latest remote origin commit
 	private function getLatestOriginHash(string $instancePath) : string
 	{
@@ -136,7 +146,7 @@ class Throttler
 	}
 
 	// Trigger a deployment in TGS
-	private function triggerUpdate(int $instanceId)
+	private function triggerUpdate(array $instance)
 	{
 		if ($this->activeCompileJobs >= $this->maxCompileJobs) {
 			// Additional capacity safety check
@@ -145,8 +155,8 @@ class Throttler
 		}
 
 		$this->debugLog('Triggering update!');
-		$this->tgs->updateRepo($instanceId);
-		$this->tgs->deploy($instanceId);
+		$this->tgs->updateRepo($instance['Id'], $this->getCurrentBranch($instance['Path']));
+		$this->tgs->deploy($instance['Id']);
 
 		$this->activeCompileJobs++;
 	}
@@ -198,7 +208,7 @@ class Throttler
 				continue;
 			}
 
-			$this->triggerUpdate($instance['Id']);
+			$this->triggerUpdate($instance);
 			$deploymentsTriggered++;
 		}
 
