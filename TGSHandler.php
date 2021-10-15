@@ -9,16 +9,14 @@ class TGSHandler
 		'Accept' => 'application/json'
 	];
 
-	private string $host;
-	private int $port;
+	private string $baseUri;
 	private Client $client;
 
-	public function __construct(string $host, int $port = 80)
+	public function __construct(string $host, $port = null)
 	{
-		$this->host = $host;
-		$this->port = $port;
+		$this->baseUri = $host . ($port ? ":$port" : '');
 		$this->client = new Client([
-			'base_uri' => "$host:$port",
+			'base_uri' => $this->baseUri,
 			'headers' => $this->defaultHeaders
 		]);
 	}
@@ -33,7 +31,7 @@ class TGSHandler
 
 		// Guzzle clients are immutable, so we just create a new one with the bearer
 		$this->client = new Client([
-			'base_uri' => "{$this->host}:{$this->port}",
+			'base_uri' => $this->baseUri,
 			'headers' => array_merge($this->defaultHeaders, [
 				'Authorization' => "Bearer {$body->bearer}"
 			])
