@@ -46,14 +46,25 @@ class TGSHandler
 		return $body->id;
 	}
 
+	// Get current repository info
+	public function getRepo(int $instance)
+	{
+		$response = $this->client->get('/Repository', [
+			'headers' => ['Instance' => $instance],
+		]);
+		$body = json_decode($response->getBody());
+		return $body;
+	}
+
 	// Update the repository
-	public function updateRepo(int $instance, string $branch)
+	public function updateRepo(int $instance, string $branch, array $testMerges = [])
 	{
 		$this->client->post('/Repository', [
 			'headers' => ['Instance' => $instance],
 			'json' => [
-				"updateFromOrigin" => true,
-				"reference"		   => $branch
+				'updateFromOrigin' => true,
+				'reference'		   => $branch,
+				'newTestMerges'	   => $testMerges
 			]
 		]);
 	}

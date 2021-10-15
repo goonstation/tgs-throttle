@@ -155,7 +155,19 @@ class Throttler
 		}
 
 		$this->debugLog('Triggering update!');
-		$this->tgs->updateRepo($instance['Id'], $this->getCurrentBranch($instance['Path']));
+
+		// Preserve test merges active on the current repo settings
+		$repoInfo = $this->tgs->getRepo($instance['Id']);
+		$newTestMerges = [];
+		foreach ($repoInfo->revisionInformation->activeTestMerges as $testMerge) {
+			$newTestMerges[] = [
+				'number' 		  => $testMerge->number,
+				'targetCommitSha' => $testMerge->targetCommitSha,
+				'comment' 		  => $testMerge->comment
+			];
+		}
+
+		$this->tgs->updateRepo($instance['Id'], $this->getCurrentBranch($instance['Path']), $newTestMerges);
 		$this->tgs->deploy($instance['Id']);
 
 		$this->activeCompileJobs++;
