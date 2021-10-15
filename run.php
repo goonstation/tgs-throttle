@@ -162,7 +162,7 @@ class Throttler
 		foreach ($repoInfo->revisionInformation->activeTestMerges as $testMerge) {
 			$newTestMerges[] = [
 				'number' 		  => $testMerge->number,
-				'targetCommitSha' => $testMerge->targetCommitSha,
+				'targetCommitSha' => null,
 				'comment' 		  => $testMerge->comment
 			];
 		}
