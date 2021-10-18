@@ -108,7 +108,7 @@ class Throttler
 	private function getLastSuccessfulHash(int $instanceId) : string
 	{
 		$query = "
-			SELECT ri.CommitSha AS last_success_sha
+			SELECT ri.OriginCommitSha AS last_success_sha
 			FROM Jobs j 
 			JOIN CompileJobs cj ON cj.JobId = j.Id
 			JOIN RevisionInformations ri ON ri.Id = cj.RevisionInformationId
