@@ -57,9 +57,10 @@ class Throttler
 		$db   = $this->config['db']['db'];
 		$user = $this->config['db']['user'];
 		$pass = $this->config['db']['pass'];
-		$charset = 'utf8mb4';
 		
-		$dsn = "$type:host=$host;dbname=$db;charset=$charset";
+		$dsn = "$type:host=$host;dbname=$db";
+		if (!$type || $type === 'mysql') $dsn .= ';charset=utf8mb4';
+
 		$options = [
 			PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
 			PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
@@ -75,11 +76,11 @@ class Throttler
 	// Get all active instances
 	private function getInstances() : array
 	{
-		$query = "
-			SELECT Id, Name, Path
-			FROM Instances
-			WHERE Online = 1
-		";
+		$query = '
+			SELECT "Id", "Name", "Path"
+			FROM "Instances"
+			WHERE "Online" = 1
+		';
 		$stmt = $this->pdo->query($query);
 		return $stmt->fetchAll();
 	}
@@ -93,13 +94,13 @@ class Throttler
 		Feature request to resolve this currently open at:
 		https://github.com/tgstation/tgstation-server/issues/1318
 		*/
-		$query = "
-			SELECT InstanceId
-			FROM Jobs
-			WHERE Description = 'Compile active repository code'
-			AND StoppedAt IS NULL
-			AND StartedById = :currentUserId
-		";
+		$query = '
+			SELECT "InstanceId"
+			FROM "Jobs"
+			WHERE "Description" = \'Compile active repository code\'
+			AND "StoppedAt" IS NULL
+			AND "StartedById" = :currentUserId
+		';
 		$stmt = $this->pdo->prepare($query);
 		$stmt->execute(['currentUserId' => $this->tgs->getUserId()]);
 		return $stmt->fetchAll();
@@ -108,18 +109,18 @@ class Throttler
 	// Get the commit hash of the last successful deployment
 	private function getLastSuccessfulHash(int $instanceId) : string
 	{
-		$query = "
-			SELECT ri.OriginCommitSha AS last_success_sha
-			FROM Jobs j 
-			JOIN CompileJobs cj ON cj.JobId = j.Id
-			JOIN RevisionInformations ri ON ri.Id = cj.RevisionInformationId
-			WHERE j.InstanceId = :instanceId
-			AND j.Cancelled = 0
-			AND j.StoppedAt IS NOT NULL
-			AND j.ErrorCode IS NULL
-			ORDER BY j.Id DESC
+		$query = '
+			SELECT ri."OriginCommitSha" AS last_success_sha
+			FROM "Jobs" j 
+			JOIN "CompileJobs" cj ON cj."JobId" = j."Id"
+			JOIN "RevisionInformations" ri ON ri."Id" = cj."RevisionInformationId"
+			WHERE j."InstanceId" = :instanceId
+			AND j."Cancelled" = 0
+			AND j."StoppedAt" IS NOT NULL
+			AND j."ErrorCode" IS NULL
+			ORDER BY j."Id" DESC
 			LIMIT 1;
-		";
+		';
 		$stmt = $this->pdo->prepare($query);
 		$stmt->execute(['instanceId' => $instanceId]);
 		return $stmt->fetchColumn();
