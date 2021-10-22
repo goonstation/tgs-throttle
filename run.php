@@ -52,13 +52,14 @@ class Throttler
 	// Connect to the database
 	private function dbConnect()
 	{
+		$type = $this->config['db']['type'];
 		$host = $this->config['db']['host'];
 		$db   = $this->config['db']['db'];
 		$user = $this->config['db']['user'];
 		$pass = $this->config['db']['pass'];
 		$charset = 'utf8mb4';
 		
-		$dsn = "mysql:host=$host;dbname=$db;charset=$charset";
+		$dsn = "$type:host=$host;dbname=$db;charset=$charset";
 		$options = [
 			PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
 			PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
